@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 
 let socket;
 
-export default function Chat({ userId ,name}) {
+export default function Chat({ userId, name }) {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -12,12 +12,12 @@ export default function Chat({ userId ,name}) {
 
   useEffect(() => {
     // Connect to Socket.io server
-    socket = io("/", { path: "/api/socket", query: { userId,name } });
+    socket = io("/", { path: "/api/socket", query: { userId, name } });
 
-    
+
     // console.log(socket);
     socket.on("onlineUsers", (users) => {
-      console.log('user are',{users});
+      console.log('user are', { users });
       setOnlineUsers(users.filter((id) => id.id !== userId));
     });
 
@@ -42,11 +42,11 @@ export default function Chat({ userId ,name}) {
     if (selectedUser) {
       const chatId = [userId, selectedUser].sort().join("_"); // Unique chat ID for users
       socket.emit("getMessages", { chatId });
-  
+
       socket.on("loadMessages", (messages) => {
         setMessages(messages);
       });
-  
+
       return () => {
         socket.off("loadMessages");
       };
@@ -60,40 +60,40 @@ export default function Chat({ userId ,name}) {
         setMessages((prevMessages) => [...prevMessages, newMessage]); // Add the new message to the chat
       }
     });
-  
+
     return () => {
       socket.off("newMessage");
     };
   }, [selectedUser]);
-  
+
 
   // const handleSendMessage = () => {
   //   if (selectedUser && message.trim()) {
   //     const chatId = [userId, selectedUser].sort().join("_"); // Unique chat ID for users
   //     const newMessage = { sender: userId, content: message };
-  
+
   //     setMessages((prev) => [...prev, newMessage]);
-  
+
   //     socket.emit("sendMessage", {
   //       chatId,
   //       senderId: userId,
   //       recipientId: selectedUser,
   //       content: message,
   //     });
-  
+
   //     setMessage("");
   //   }
   // };
-  
+
 
   const handleSendMessage = () => {
     if (selectedUser && message.trim()) {
       const chatId = [userId, selectedUser].sort().join("_"); // Unique chat ID for users
       const newMessage = { sender: userId, content: message };
-  
+
       // Optimistically update the UI for the sender
       setMessages((prev) => [...prev, newMessage]);
-  
+
       // Emit the message to the server
       socket.emit("sendMessage", {
         chatId,
@@ -101,16 +101,25 @@ export default function Chat({ userId ,name}) {
         recipientId: selectedUser,
         content: message,
       });
-  
+
       setMessage(""); // Clear the input field
     }
   };
-  
+
   const handleTyping = (typing) => {
     socket.emit("typing", { recipientId: selectedUser, senderId: userId, isTyping: typing });
   };
 
-  console.log('messages',messages)
+  console.log('messages', messages)
+
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    // Scroll to the bottom whenever messages change
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   return (
     <div className="flex">
@@ -135,16 +144,33 @@ export default function Chat({ userId ,name}) {
         {selectedUser ? (
           <>
             <div className="h-96 border p-4 overflow-y-auto">
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`p-2 my-2 rounded ${msg.sender === userId ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-                >
-                  {msg.content}
-                </div>
-              ))}
+              <div className="w-full my-2 flex flex-col">
+                {messages.map((msg, index) => (
+                  <div
+                    key={msg._id || index}  
+                    className={`p-2 my-2 rounded max-w-xs ${msg.sender === userId
+                      ? "bg-blue-500 text-white self-end mr-2"
+                      : "bg-gray-200 text-black self-start ml-2"
+                      }`}
+                    style={{
+                      display: "inline-block",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {msg.content}
+                  </div>
+                ))}
+
+                {/* Add a line between messages */}
+                {messages.length > 1 && (
+                  <div className="border-b border-gray-300 w-full my-2"></div>
+                )}
+              </div>
               {isTyping && <div className="text-gray-500 italic">Typing...</div>}
+              <div ref={messagesEndRef} />
             </div>
+
+
 
             <div className="mt-4 flex">
               <input
@@ -155,6 +181,12 @@ export default function Chat({ userId ,name}) {
                 onChange={(e) => setMessage(e.target.value)}
                 onFocus={() => handleTyping(true)}
                 onBlur={() => handleTyping(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault(); // Prevent a new line from being added
+                    handleSendMessage(); // Call the send message function
+                  }
+                }}
               />
               <button className="bg-blue-500 text-white px-4 py-2" onClick={handleSendMessage}>
                 Send
