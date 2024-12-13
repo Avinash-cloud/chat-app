@@ -6,6 +6,11 @@ import {jwtDecode} from "jwt-decode";
 const Navbar = () => {
 
     const [name, setuserName] = useState("");
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const toggleSidebar = () => {
+      setIsSidebarOpen(!isSidebarOpen);
+    };
 
   useEffect(() => {
       const token = localStorage.getItem("token");
@@ -37,13 +42,32 @@ const Navbar = () => {
       }
   return (
     <nav className="bg-blue-600 p-4">
-      <div className="container mx-auto flex justify-between items-center">
-        {/* Logo */}
-        <div className="text-white text-lg font-bold"> <h1>welocme {name}</h1></div>
-        
-
-        {/* Navigation Links */}
-        <ul className="hidden md:flex space-x-4">
+       <div>
+      {/* Sidebar */}
+      <div
+        className={`fixed inset-0 bg-gray-800 bg-opacity-75 z-50 transform ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } transition-transform duration-300 ease-in-out md:hidden`}
+      >
+        <div className="flex justify-end p-4">
+          <button onClick={toggleSidebar} className="text-white">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <ul className="flex flex-col items-center space-y-4">
           <li>
             <a href="/" className="text-white hover:text-gray-300">
               Home
@@ -51,7 +75,7 @@ const Navbar = () => {
           </li>
           <li>
             <a href="/chat" className="text-white hover:text-gray-300">
-              chat
+              Chat
             </a>
           </li>
           <li>
@@ -60,7 +84,47 @@ const Navbar = () => {
             </a>
           </li>
           <li>
-            <a href="#" onClick={logout} className="text-white hover:text-gray-300">
+            <a
+              href="#"
+              onClick={logout}
+              className="text-white hover:text-gray-300"
+            >
+              Logout
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      {/* Navbar */}
+      <div className="container mx-auto flex justify-between items-center py-4">
+        {/* Logo */}
+        <div className="text-white text-lg font-bold">
+          <h1>Welcome {name}</h1>
+        </div>
+
+        {/* Navigation Links for larger screens */}
+        <ul className="hidden md:flex space-x-4">
+          <li>
+            <a href="/" className="text-white hover:text-gray-300">
+              Home
+            </a>
+          </li>
+          <li>
+            <a href="/chat" className="text-white hover:text-gray-300">
+              Chat
+            </a>
+          </li>
+          <li>
+            <a href="/profile" className="text-white hover:text-gray-300">
+              Profile
+            </a>
+          </li>
+          <li>
+            <a
+              href="#"
+              onClick={logout}
+              className="text-white hover:text-gray-300"
+            >
               Logout
             </a>
           </li>
@@ -68,7 +132,10 @@ const Navbar = () => {
 
         {/* Mobile Menu Button */}
         <div className="md:hidden">
-          <button className="text-white focus:outline-none">
+          <button
+            onClick={toggleSidebar}
+            className="text-white focus:outline-none"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6"
@@ -86,6 +153,7 @@ const Navbar = () => {
           </button>
         </div>
       </div>
+    </div>
     </nav>
   );
 };
