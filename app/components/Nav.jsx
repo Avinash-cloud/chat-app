@@ -1,6 +1,32 @@
+'use client'
 import React from "react";
+import { useEffect, useState } from "react";
+import {jwtDecode} from "jwt-decode"; 
 
 const Navbar = () => {
+
+    const [name, setuserName] = useState("");
+
+  useEffect(() => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const decoded = jwtDecode(token);
+         // Extract user ID from the token
+         setuserName(decoded.name);
+         
+         // Extract name from the token
+
+        //  console.log('navigation',name)
+        } catch (error) {
+          console.error("Invalid token:", error);
+          window.location.replace('/login'); // Redirect if the token is invalid
+        }
+      } else {
+        window.location.replace('/login'); // Redirect if the token is invalid
+        // Redirect if no token is found
+      }
+    }, []);
 
     const logout=()=>{
         // Clear the token from localStorage (or cookies if used)
@@ -13,7 +39,8 @@ const Navbar = () => {
     <nav className="bg-blue-600 p-4">
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo */}
-        <div className="text-white text-lg font-bold">MyLogo</div>
+        <div className="text-white text-lg font-bold"> <h1>welocme {name}</h1></div>
+        
 
         {/* Navigation Links */}
         <ul className="hidden md:flex space-x-4">

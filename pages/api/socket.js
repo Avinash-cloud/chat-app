@@ -19,8 +19,9 @@ const ioHandler = async (req, res) => {
     let userNames = {}; // { userId: userName }
 
     io.on("connection", (socket) => {
+      
       const userId = socket.handshake.query.userId;
-      const userName = socket.handshake.query.userName;
+      const userName = socket.handshake.query.name;
       onlineUsers[userId] = socket.id;
       userNames[userId] = userName;
 
@@ -54,6 +55,8 @@ const ioHandler = async (req, res) => {
         if (recipientSocket) {
           io.to(recipientSocket).emit("newMessage", newMessage);
         }
+
+        io.to(senderId).emit("newMessage", newMessage);
       });
 
       // Typing indicator

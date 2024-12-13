@@ -9,7 +9,20 @@ export default function Login() {
   const handleLogin = async () => {
     const res = await axios.post("/api/auth/login", { email, password });
     localStorage.setItem("token", res.data.token);
-    alert("Login successful");
+
+    console.log(res);
+    
+    if (res.status === 200) {
+      alert("Login successful");
+      window.location.href = "/chat";
+    }
+    else {
+      alert("Invalid credentials");
+    }
+  };
+
+  const signup = () => {
+    window.location.href = "/signup";
   };
 
   return (
@@ -33,8 +46,12 @@ export default function Login() {
         <button className="w-full bg-blue-500 text-white p-2 mt-4" onClick={handleLogin}>
           Login
         </button>
+        <button className="w-full bg-blue-500 text-white p-2 mt-4" onClick={signup}>
+          Signup
+        </button>
+        
       </div>
-      <a href="/signup">signup</a>
+      
     </div>
   );
 }

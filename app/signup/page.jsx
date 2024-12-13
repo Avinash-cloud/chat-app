@@ -3,21 +3,43 @@ import { useState } from "react";
 
 export default function Signup() {
   const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "student" });
+  const [loading,setloading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-    const data = await res.json();
-    alert(data.message || data.error);
-    window.location.replace('/chat')
+    setloading(true); // Set loading state if needed
+  
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+  
+      const data = await res.json();
+  
+      if (res.ok) {
+        // If the login/signup is successful
+        window.location.replace('/'); // Redirect to home page
+      } else {
+        // If the login/signup fails
+        alert(data.message || "An error occurred. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error during signup:", error);
+      alert("Something went wrong. Please try again later.");
+    } finally {
+      setloading(false); // Reset loading state
+    }
+  };
+  
+
+  const login = () => {
+    window.location.href = "/login";
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
+    <div className="h-screen flex flex-col items-center justify-center bg-gray-100">
       <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-md w-96 space-y-4"
@@ -56,7 +78,9 @@ export default function Signup() {
         </button>
       </form>
 
-      <a href="/login">Login</a>
+      <button className=" bg-blue-500 text-white p-2 mt-4 rounded-lg " onClick={login}>
+      Login
+        </button>
     </div>
   );
 }

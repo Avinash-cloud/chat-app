@@ -17,8 +17,8 @@ export default function Chat({ userId ,name}) {
     
     // console.log(socket);
     socket.on("onlineUsers", (users) => {
-      // console.log('user are',{users});
-      setOnlineUsers(users.filter((id) => id !== userId));
+      console.log('user are',{users});
+      setOnlineUsers(users.filter((id) => id.id !== userId));
     });
 
     socket.on("newMessage", (data) => {
@@ -52,6 +52,38 @@ export default function Chat({ userId ,name}) {
       };
     }
   }, [selectedUser]);
+
+  useEffect(() => {
+    socket.on("newMessage", (newMessage) => {
+      // Check if the new message is relevant to the selected user (either sender or recipient)
+      if (newMessage.sender === selectedUser || newMessage.recipient === selectedUser) {
+        setMessages((prevMessages) => [...prevMessages, newMessage]); // Add the new message to the chat
+      }
+    });
+  
+    return () => {
+      socket.off("newMessage");
+    };
+  }, [selectedUser]);
+  
+
+  // const handleSendMessage = () => {
+  //   if (selectedUser && message.trim()) {
+  //     const chatId = [userId, selectedUser].sort().join("_"); // Unique chat ID for users
+  //     const newMessage = { sender: userId, content: message };
+  
+  //     setMessages((prev) => [...prev, newMessage]);
+  
+  //     socket.emit("sendMessage", {
+  //       chatId,
+  //       senderId: userId,
+  //       recipientId: selectedUser,
+  //       content: message,
+  //     });
+  
+  //     setMessage("");
+  //   }
+  // };
   
 
   const handleSendMessage = () => {
@@ -59,8 +91,10 @@ export default function Chat({ userId ,name}) {
       const chatId = [userId, selectedUser].sort().join("_"); // Unique chat ID for users
       const newMessage = { sender: userId, content: message };
   
+      // Optimistically update the UI for the sender
       setMessages((prev) => [...prev, newMessage]);
   
+      // Emit the message to the server
       socket.emit("sendMessage", {
         chatId,
         senderId: userId,
@@ -68,7 +102,7 @@ export default function Chat({ userId ,name}) {
         content: message,
       });
   
-      setMessage("");
+      setMessage(""); // Clear the input field
     }
   };
   
@@ -76,7 +110,7 @@ export default function Chat({ userId ,name}) {
     socket.emit("typing", { recipientId: selectedUser, senderId: userId, isTyping: typing });
   };
 
-  console.log(onlineUsers)
+  console.log('messages',messages)
 
   return (
     <div className="flex">
@@ -84,13 +118,13 @@ export default function Chat({ userId ,name}) {
       <div className="w-1/4 border-r p-4">
         <h2 className="text-lg font-bold">Online Users</h2>
         <ul>
-          {onlineUsers.map((user) => (
+          {onlineUsers.map((user, index) => (
             <li
-              key={user}
+              key={index}
               className={`cursor-pointer p-2 ${user === selectedUser ? "bg-blue-200" : ""}`}
-              onClick={() => setSelectedUser(user)}
+              onClick={() => setSelectedUser(user.id)}
             >
-              {user}
+              {user.name}
             </li>
           ))}
         </ul>
