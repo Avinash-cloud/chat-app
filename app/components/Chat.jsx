@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
+import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 
 let socket;
 
@@ -9,6 +10,52 @@ export default function Chat({ userId, name }) {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+
+  const formatWhatsAppStyleTime = (isoDate) => {
+     
+    try{
+      const date = new Date(isoDate); 
+      return format(date, "h:mm a");
+    }  
+    catch(error){
+      console.log('error');
+
+    }
+      
+    
+  };
+
+  // Helper function to group messages by date
+  const groupMessagesByDate = (messages) => {
+    try {
+      return messages.reduce((groups, message) => {
+        try {
+          // Safely parse and format the timestamp
+          const messageDate = format(new Date(message.timestamp), "yyyy-MM-dd");
+          
+          // Initialize the date group if not present
+          if (!groups[messageDate]) {
+            groups[messageDate] = [];
+          }
+          
+          // Add the message to the appropriate group
+          groups[messageDate].push(message);
+        } catch (innerError) {
+          console.error("Error processing message:", message, innerError);
+        }
+        
+        return groups;
+      }, {});
+    } catch (error) {
+      console.error("Error grouping messages by date:", error);
+      return {}; // Return an empty object in case of failure
+    }
+  };
+
+
+
+  const groupedMessages = groupMessagesByDate(messages);
+
 
   useEffect(() => {
     // Connect to Socket.io server
@@ -145,21 +192,42 @@ export default function Chat({ userId, name }) {
           <>
             <div className="h-96 border p-4 overflow-y-auto">
               <div className="w-full my-2 flex flex-col">
-                {messages.map((msg, index) => (
-                  <div
-                    key={msg._id || index}  
-                    className={`p-2 my-2 rounded max-w-xs ${msg.sender === userId
-                      ? "bg-blue-500 text-white self-end mr-2"
-                      : "bg-gray-200 text-black self-start ml-2"
-                      }`}
-                    style={{
-                      display: "inline-block",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {msg.content}
-                  </div>
-                ))}
+                <div className="chat-container">
+                  {Object.keys(groupedMessages).map((date, index) => (
+                    <div key={index}>
+                      {/* Date separator */}
+                      <div className="date-separator flex flex-col text-center text-gray-500 my-2">
+                        {isToday(new Date(date))
+                          ? "Today"
+                          : isYesterday(new Date(date))
+                            ? "Yesterday"
+                            : format(new Date(date), "dd/MM/yy")}
+                      </div>
+
+                      {/* Messages for this date */}
+                      <div className="w-full my-2 flex flex-col">
+                        {groupedMessages[date].map((msg, idx) => (
+                          <div
+                            key={msg._id || idx}
+                            className={`p-2 my-1 rounded max-w-xs ${msg.sender === userId
+                              ? "bg-blue-500 text-white self-end mr-2"
+                              : "bg-gray-200 text-black self-start ml-2"
+                              }`}
+                            style={{
+                              display: "inline-block",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {msg.content}
+                            <span className="time block text-xs text-gray-400 mt-1">
+                              {formatWhatsAppStyleTime(msg?.timestamp)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* Add a line between messages */}
                 {messages.length > 1 && (
